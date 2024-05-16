@@ -1,0 +1,16 @@
+{
+    "name": "JavacLMD.HFSM",
+    "rootNamespace": "JavacLMD.HFSM",
+    "references": [
+        "GUID:c103a5f0adee7b04091b01bf35ed4244"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
