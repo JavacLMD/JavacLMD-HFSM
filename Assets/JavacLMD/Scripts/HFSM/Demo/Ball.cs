@@ -16,27 +16,36 @@ namespace JavacLMD.HFSM.Demo {
             Black,
         }
 
+
+        public enum WhiteSubStateID { Magenta, Grey }
+
         public MeshRenderer mesh;
         public Material material;
 
         public BallColor ColorState;
+        public WhiteSubStateID WhiteColorSubState;
         private StateMachine<BallColor> sm;
 
         // Start is called before the first frame update
-        void Start()
+        void Awake()
         {
             mesh = GetComponent<MeshRenderer>();
             material = mesh.material;
 
-
+            //instantiating the state machine
             sm = new StateMachine<BallColor>();
 
+            //Defining the states
+            State<BallColor, WhiteSubStateID> whiteState = new State<BallColor, WhiteSubStateID>(BallColor.White);
             State<BallColor> blueState = new State<BallColor>(BallColor.Blue);
-            State<BallColor> whiteState = new State<BallColor>(BallColor.White);
             State<BallColor> redState = new State<BallColor>(BallColor.Red);
             State<BallColor> greenState = new State<BallColor>(BallColor.Green);
             State<BallColor> blackState = new State<BallColor>(BallColor.Black);
 
+            State<WhiteSubStateID> magentaState = new State<WhiteSubStateID>(WhiteSubStateID.Magenta);
+            State<WhiteSubStateID> greyState = new State<WhiteSubStateID>(WhiteSubStateID.Grey);
+
+            //Defining the OnEnterState action for debug purposes...
             blueState.OnEnterState += () =>
             {
                 material.color = Color.blue;
@@ -65,55 +74,106 @@ namespace JavacLMD.HFSM.Demo {
                 Debug.Log("Setting the color green");
             };
 
+            magentaState.OnEnterState += () =>
+            {
+                material.color = Color.magenta;
+                Debug.Log("Setting the color magenta");
+            };
 
-            //Add states to State Machine
+            greyState.OnEnterState += () =>
+            {
+                material.color = Color.gray;
+                Debug.Log("Setting the color grey");
+            };
+
+            //Define transitions
+            var toWhiteTransition = new Transition<BallColor>(BallColor.White, BallColor.White, () => ColorState.Equals(BallColor.White));
+
+            var redToBlue = new Transition<BallColor>(BallColor.Red, BallColor.Blue, () => ColorState.Equals(BallColor.Blue));
+            var blueToGreen = new Transition<BallColor>(BallColor.Blue, BallColor.Green, () => ColorState.Equals(BallColor.Green));
+            var greenToBlack = new Transition<BallColor>(BallColor.Green, BallColor.Black, () => ColorState.Equals(BallColor.Black));
+            var greenToRed = new Transition<BallColor>(BallColor.Green, BallColor.Red, () => ColorState.Equals(BallColor.Red));
+            var blackToBlue = new Transition<BallColor>(BallColor.Black, BallColor.Blue, () => ColorState.Equals(BallColor.Blue));
+            var blackToGreen = new Transition<BallColor>(BallColor.Black, BallColor.Green, () => ColorState.Equals(BallColor.Green));
+            var whiteToBlue = new Transition<BallColor>(BallColor.White, BallColor.Blue, () => ColorState.Equals(BallColor.Blue));
+            var whiteToGreen = new Transition<BallColor>(BallColor.White, BallColor.Green, () => ColorState.Equals(BallColor.Green));
+            var whiteToRed = new Transition<BallColor>(BallColor.White, BallColor.Green, () => ColorState.Equals(BallColor.Red));
+            var whiteToBlack = new Transition<BallColor>(BallColor.White, BallColor.Black, () => ColorState.Equals(BallColor.Black));
+
+            //Sub state transitions
+            var white_magentaToGrey = new Transition<WhiteSubStateID>(WhiteSubStateID.Magenta, WhiteSubStateID.Grey, () => WhiteColorSubState.Equals(WhiteSubStateID.Grey));
+            var white_greyToMagenta = new Transition<WhiteSubStateID>(WhiteSubStateID.Grey, WhiteSubStateID.Magenta, () => WhiteColorSubState.Equals(WhiteSubStateID.Magenta));
+
+            //Adding sub states to parent state...
+            whiteState.AddState(magentaState);
+            whiteState.AddState(greyState);
+
+            //Add sub state transitions to parent state
+            whiteState.AddTransition(white_greyToMagenta);
+            whiteState.AddTransition(white_magentaToGrey);
+
+            //Add states to Root State Machine
             sm.AddState(blueState);
             sm.AddState(whiteState);
             sm.AddState(redState);
             sm.AddState(greenState);
             sm.AddState(blackState);
 
-            //Any state can transition to white 
-            sm.AddAnyTransition(new Transition<BallColor>(BallColor.White, BallColor.White, () => ColorState.Equals(BallColor.White)));
+            //Add all the transitions            
+            sm.AddAnyTransition(toWhiteTransition); //all states will be able to switch to the white state
 
-            //Red can transition to blue
-            sm.AddTransition(new Transition<BallColor>(BallColor.Red, BallColor.Blue, () => ColorState.Equals(BallColor.Blue)));
+            sm.AddTransition(redToBlue);
+            sm.AddTransition(blueToGreen);
+            sm.AddTransition(greenToBlack);
+            sm.AddTransition(greenToRed);
+            sm.AddTransition(blackToBlue);
+            sm.AddTransition(blackToGreen);
+            sm.AddTransition(whiteToRed);
+            sm.AddTransition(whiteToBlue);
+            sm.AddTransition(whiteToGreen);
+            sm.AddTransition(whiteToBlack);
 
-            //Blue can transition to green
-            sm.AddTransition(new Transition<BallColor>(BallColor.Blue, BallColor.Green, () => ColorState.Equals(BallColor.Green)));
-
-            //Green can transition to Red and Black
-            sm.AddTransition(new Transition<BallColor>(BallColor.Green, BallColor.Black, () => ColorState.Equals(BallColor.Black)));
-            sm.AddTransition(new Transition<BallColor>(BallColor.Green, BallColor.Red, () => ColorState.Equals(BallColor.Red)));
-
-            //Black can transition to blue and green
-            sm.AddTransition(new Transition<BallColor>(BallColor.Black, BallColor.Blue, () => ColorState.Equals(BallColor.Blue)));
-            sm.AddTransition(new Transition<BallColor>(BallColor.Black, BallColor.Green, () => ColorState.Equals(BallColor.Green)));
-
-            //White can transition to blue, green, red, and black
-            sm.AddTransition(new Transition<BallColor>(BallColor.White, BallColor.Blue, () => ColorState.Equals(BallColor.Blue)));
-            sm.AddTransition(new Transition<BallColor>(BallColor.White, BallColor.Green, () => ColorState.Equals(BallColor.Green)));
-            sm.AddTransition(new Transition<BallColor>(BallColor.White, BallColor.Red, () => ColorState.Equals(BallColor.Red)));
-            sm.AddTransition(new Transition<BallColor>(BallColor.White, BallColor.Black, () => ColorState.Equals(BallColor.Black)));
-
-            sm.SetInitialState(BallColor.White);
+            //Initialize the state machine
+            sm.SetInitialState(BallColor.White); //initial state is defaulted to firstly added State
             sm.Init(null);
+        }
+
+
+        private void OnEnable()
+        {
+            //Call EnterState
             sm.EnterState();
         }
 
         private void OnDisable()
         {
+            //Call exit state
             sm.ExitState();
         }
 
 
-        // Update is called once per frame
         void Update()
         {
+            /* Update the state every frame (if active)
+             * Transitions will be checked in this frame
+             */
             sm.UpdateState();
         }
 
-        
+        private void LateUpdate()
+        {
+            /* Late Update the state after every frame (if active)
+             */
+            sm.LateUpdateState();
+        }
+
+        private void FixedUpdate()
+        {
+            /* Fixed Update the state after fixed (physics) frame (if active)
+             */
+            sm.FixedUpdateState();
+        }
+
 
 
     }

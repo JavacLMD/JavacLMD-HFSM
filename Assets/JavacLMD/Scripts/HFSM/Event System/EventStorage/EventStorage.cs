@@ -14,7 +14,7 @@ namespace JavacLMD.EventSystem
     {
         
         /// <summary>
-        /// Internal class dedicated for single parameter actions inheriting from IGameEvent
+        /// private GameEvent<typeparamref name="T"/> class used to hold like listeners with data
         /// </summary>
         /// <typeparam name="T"></typeparam>
         private class GameEvent<T> : IGameEvent where T : IGameEvent
@@ -36,10 +36,9 @@ namespace JavacLMD.EventSystem
                 listeners?.Invoke(gameEvent);
             }
         }
-        
-        /// <summary>
-        /// Internal class dedicated for no parameter actions
-        /// </summary>
+       /// <summary>
+       /// Private GameEvent class used to hold like listeners that don't have data
+       /// </summary>
         private class GameEvent : IGameEvent
         {
             private event Action listeners;
@@ -61,7 +60,7 @@ namespace JavacLMD.EventSystem
         }
         
         /// <summary>
-        /// Internal class that can store and run actions.
+        /// Private class that can store and run actions.
         /// Separates control over each dictionary to make it simpler to implement.
         /// </summary>
         private class Storage
