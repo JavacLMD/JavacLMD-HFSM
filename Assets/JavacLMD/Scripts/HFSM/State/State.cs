@@ -71,24 +71,6 @@ namespace JavacLMD.HFSM
 
         }
 
-        public void AddState(IState<TSubStateID> state)
-        {
-            InitSubStateMachine();
-
-            subStateMachine.AddState(state);
-        }
-
-        public void AddTransition(ITransition<TSubStateID> transition)
-        {
-            InitSubStateMachine();
-            subStateMachine.AddTransition(transition);
-        }
-
-        public void AddAnyTransition(ITransition<TSubStateID> transition)
-        {
-            InitSubStateMachine();
-            subStateMachine.AddAnyTransition(transition);
-        }
 
         public void SwitchState(TSubStateID nextState)
         {
@@ -151,6 +133,48 @@ namespace JavacLMD.HFSM
 
             if (subStateMachine != null)
                 subStateMachine.UpdateState();
+        }
+
+        public void AddState<T>(T state) where T : IState<TSubStateID>
+        {
+            InitSubStateMachine();
+            subStateMachine.AddState(state);
+        }
+
+        public void RemoveState<T>(T state) where T : IState<TSubStateID>
+        {
+            subStateMachine?.RemoveState(state);
+        }
+
+        public void AddTransition<T>(T transition) where T : ITransition<TSubStateID>
+        {
+            InitSubStateMachine();
+            subStateMachine?.AddTransition(transition);
+        }
+
+        public void RemoveTransition<T>(T transition) where T : ITransition<TSubStateID>
+        {
+            subStateMachine?.RemoveTransition(transition);
+        }
+
+        public void AddAnyTransition<T>(T transition) where T : ITransition<TSubStateID>
+        {
+            subStateMachine.AddAnyTransition(transition);
+        }
+
+        public void RemoveAnyTransition<T>(T transition) where T : ITransition<TSubStateID>
+        {
+            subStateMachine.RemoveAnyTransition(transition);
+        }
+
+        public T GetState<T>(TSubStateID stateID) where T : IState<TSubStateID>
+        {
+            return subStateMachine.GetState<T>(stateID);
+        }
+
+        public T GetActiveState<T>() where T : IState<TSubStateID>
+        {
+            return subStateMachine.GetActiveState<T>();
         }
     }
 

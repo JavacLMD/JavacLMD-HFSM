@@ -1,6 +1,7 @@
 ﻿using JavacLMD.HFSM.Exceptions;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 
 namespace JavacLMD.HFSM
@@ -26,38 +27,7 @@ namespace JavacLMD.HFSM
 
         protected IStateMachine<TStateID> parentStateMachine;
 
-        public void AddTransition(ITransition<TStateID> transition)
-        {
-            var bundle = GetOrCreateStateBundle(transition.From);
-            bundle.Transitions ??= new List<ITransition<TStateID>>();
-            transition.Init(parentStateMachine ?? this);
-            bundle.Transitions.Add(transition);
 
-            stateBundleMap[transition.From] = bundle;
-        }
-
- 
-        public void AddAnyTransition(ITransition<TStateID> transition)
-        {
-            anyTransitions ??= new List<ITransition<TStateID>>();
-            transition.Init(parentStateMachine ?? this);
-            anyTransitions.Add(transition);
-        }
-
-        public void AddState(IState<TStateID> state)
-        {
-            var bundle = GetOrCreateStateBundle(state.ID);
-            state.Init(parentStateMachine ?? this);
-            bundle.State = state;
-
-            stateBundleMap[state.ID] = bundle;
-
-            if (stateBundleMap != null && stateBundleMap.Count == 1)
-            {
-                SetInitialState(state.ID);
-            }
-
-        }
 
         public void SetInitialState(TStateID stateID)
         {
@@ -93,8 +63,12 @@ namespace JavacLMD.HFSM
             {
                 activeStateBundle.State.EnterState();
                 ActiveStateID = activeStateBundle.State.ID;
+
                 //ghost state stuff?
-            
+                if (activeStateBundle.State is IGhostState)
+                {
+                    EvaluateTransitions();
+                }
             }
         }
 
@@ -205,6 +179,86 @@ namespace JavacLMD.HFSM
             if (activeStateBundle == null || activeStateBundle.State == null) return;
 
             activeStateBundle.State.FixedUpdateState();
+        }
+
+        public void AddState<T>(T state) where T : IState<TStateID>
+        {
+            var bundle = GetOrCreateStateBundle(state.ID);
+            state.Init(parentStateMachine ?? this);
+            bundle.State = state;
+
+            stateBundleMap[state.ID] = bundle;
+
+            if (stateBundleMap != null && stateBundleMap.Count == 1)
+            {
+                SetInitialState(state.ID);
+            }
+        }
+
+        public void RemoveState<T>(T state) where T : IState<TStateID>
+        {
+            if (state.ID.Equals(initialState.id)) UnityEngine.Debug.LogWarning("Cannot remove state from statemachine as it's the default state!");
+
+            if (stateBundleMap.TryGetValue(state.ID, out var bundle))
+            {
+                bundle.State = null;
+
+                if (ActiveStateID.Equals(state.ID))
+                {
+                    EvaluateTransitions();
+                }
+
+                if (ActiveStateID.Equals(state.ID))
+                {
+                    SwitchState(initialState.id);
+                }
+            }
+
+        }
+
+        public void AddTransition<T>(T transition) where T : ITransition<TStateID>
+        {
+            var bundle = GetOrCreateStateBundle(transition.From);
+            bundle.Transitions ??= new List<ITransition<TStateID>>();
+            transition.Init(parentStateMachine ?? this);
+            bundle.Transitions.Add(transition);
+
+            stateBundleMap[transition.From] = bundle;
+        }
+
+        public void RemoveTransition<T>(T transition) where T : ITransition<TStateID>
+        {
+            if (stateBundleMap.TryGetValue(transition.From, out var bundle))
+            {
+                bundle.Transitions.Remove(transition);
+            }
+        }
+
+        public void AddAnyTransition<T>(T transition) where T : ITransition<TStateID>
+        {
+            anyTransitions ??= new List<ITransition<TStateID>>();
+            transition.Init(parentStateMachine ?? this);
+            anyTransitions.Add(transition);
+        }
+
+        public void RemoveAnyTransition<T>(T transition) where T : ITransition<TStateID>
+        {
+            if (anyTransitions == null || anyTransitions.Count == 0) return;
+
+            anyTransitions.Remove(transition);
+        }
+
+        public T GetState<T>(TStateID stateID) where T : IState<TStateID>
+        {
+            if (!stateBundleMap.TryGetValue(stateID, out var bundle) || bundle.State == null) return default(T);
+
+            return (T) bundle.State;
+
+        }
+
+        public T GetActiveState<T>() where T : IState<TStateID>
+        {
+            return GetState<T>(ActiveStateID);
         }
     }
 
